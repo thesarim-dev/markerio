@@ -9,18 +9,38 @@ export function CreateExam() {
   const [rubric, setRubric] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
-  const handleSave = () => {
-    if (!name.trim()) return;
-    const newExamId = addExam({
-      name,
-      gradeLevel,
-      answerKey: uploadedFile || answerKey,
-      rubric
-    });
-    setView({
-      name: 'exam_detail',
-      examId: newExamId
-    });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFile = async (file: File) => {
+    setUploadedFile(file.name);
+    if (
+      file.type.startsWith('text/') ||
+      file.name.endsWith('.txt') ||
+      file.name.endsWith('.md')
+    ) {
+      const text = await file.text();
+      setAnswerKey(text);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim() || !answerKey.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const newExamId = await addExam({
+        name,
+        gradeLevel,
+        answerKey: answerKey.trim(),
+        rubric: rubric.trim()
+      });
+      setView({ name: 'exam_detail', examId: newExamId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save exam');
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <div className="flex flex-col h-full bg-slate-50 pb-24">
@@ -81,7 +101,7 @@ export function CreateExam() {
               Official Answer Key
             </label>
             <p className="text-xs text-slate-500 mb-3">
-              Upload a PDF/Image or type the key below.
+              Paste the answer key below, or upload a text file.
             </p>
 
             {uploadedFile ?
@@ -110,12 +130,21 @@ export function CreateExam() {
               onDrop={(e) => {
                 e.preventDefault();
                 setIsDragging(false);
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                  setUploadedFile(e.dataTransfer.files[0].name);
+                if (e.dataTransfer.files?.[0]) {
+                  handleFile(e.dataTransfer.files[0]);
                 }
               }}
-              onClick={() => setUploadedFile('official_key_scanned.pdf')} // Mock upload
             >
+              <input
+                type="file"
+                accept=".txt,.md,text/plain"
+                className="hidden"
+                id="answer-key-file"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleFile(e.target.files[0]);
+                }}
+              />
+              <label htmlFor="answer-key-file" className="cursor-pointer block">
                 <UploadCloud
                 className={`w-8 h-8 mx-auto mb-2 ${isDragging ? 'text-blue-500' : 'text-slate-400'}`} />
               
@@ -123,9 +152,10 @@ export function CreateExam() {
                   Tap to upload or drag & drop
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  PDF, DOCX, JPG, PNG
+                  TXT or MD (paste below for PDFs/images)
                 </p>
-              </div>
+              </label>
+            </div>
             }
 
             <div className="relative flex items-center py-2">
@@ -168,12 +198,14 @@ export function CreateExam() {
       </main>
 
       <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white border-t border-slate-200 z-20">
+        {error &&
+        <p className="text-sm text-red-600 mb-3 text-center">{error}</p>
+        }
         <button
           onClick={handleSave}
-          disabled={!name.trim()}
+          disabled={!name.trim() || !answerKey.trim() || saving}
           className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl py-4 font-semibold shadow-md transition-colors text-lg">
-          
-          Save Exam Master
+          {saving ? 'Saving...' : 'Save Exam Master'}
         </button>
       </div>
     </div>);

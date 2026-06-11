@@ -96,7 +96,7 @@ export function ExamDetail({ examId }: {examId: string;}) {
                       {report.studentName}
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> {report.pages.length}{' '}
+                      <FileText className="w-3 h-3" /> {report.pageCount}{' '}
                       pages
                     </p>
                   </div>

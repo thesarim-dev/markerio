@@ -11,7 +11,14 @@ import { Report } from './pages/Report';
 import { ReportsList } from './pages/ReportsList';
 import { Loader2 } from 'lucide-react';
 function AppContent() {
-  const { view } = useAppContext();
+  const { view, loading } = useAppContext();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
   const renderView = () => {
     switch (view.name) {
       case 'dashboard':

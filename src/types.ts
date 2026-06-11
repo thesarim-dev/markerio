@@ -20,7 +20,7 @@ export interface StudentReport {
   examId: string;
   studentName: string;
   score: number;
-  pages: string[];
+  pageCount: number;
   feedback: FeedbackItem[];
   createdAt: number;
 }
