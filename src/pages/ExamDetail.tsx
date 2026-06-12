@@ -41,9 +41,11 @@ export function ExamDetail({ examId }: {examId: string;}) {
           </button>
         </div>
         <div className="flex items-center gap-4 mt-3">
-          <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 text-sm font-medium">
-            {exam.gradeLevel}
-          </span>
+          {exam.gradeLevel && (
+            <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 text-sm font-medium">
+              {exam.gradeLevel}
+            </span>
+          )}
           <span className="flex items-center gap-1.5 text-sm text-slate-500">
             <Users className="w-4 h-4" />
             {examReports.length} Graded

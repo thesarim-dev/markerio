@@ -251,7 +251,7 @@ ${exam.rubric || "Standard partial credit. Deduct only for clear errors vs answe
 
 === EXAM INFO ===
 Name: ${exam.name}
-Grade Level: ${exam.grade_level}
+${exam.grade_level?.trim() ? `Grade Level: ${exam.grade_level.trim()}` : ''}
 Pages to grade: ${storagePaths.length}
 
 Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.`;

@@ -71,9 +71,11 @@ export function Dashboard() {
                     {exam.name}
                   </h3>
                   <div className="flex items-center gap-3 text-sm text-slate-500">
-                    <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-slate-700 font-medium">
-                      {exam.gradeLevel}
-                    </span>
+                    {exam.gradeLevel && (
+                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-slate-700 font-medium">
+                        {exam.gradeLevel}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
                       {new Date(exam.createdAt).toLocaleDateString()}

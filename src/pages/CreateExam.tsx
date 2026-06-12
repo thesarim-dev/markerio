@@ -15,7 +15,7 @@ export function CreateExam({ examId }: { examId?: string }) {
   const existingExam = examId ? exams.find((e) => e.id === examId) : undefined;
 
   const [name, setName] = useState('');
-  const [gradeLevel, setGradeLevel] = useState('10th Grade');
+  const [gradeLevel, setGradeLevel] = useState('');
   const [answerKey, setAnswerKey] = useState('');
   const [rubric, setRubric] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -86,7 +86,7 @@ export function CreateExam({ examId }: { examId?: string }) {
 
       const payload = {
         name: name.trim(),
-        gradeLevel,
+        gradeLevel: gradeLevel.trim(),
         answerKey: resolvedKey,
         rubric: rubric.trim(),
       };
@@ -157,12 +157,17 @@ export function CreateExam({ examId }: { examId?: string }) {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Grade Level
+                Grade Level{' '}
+                <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <select
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-slate-900 appearance-none">
+                <option value="">Not specified</option>
+                <option>7th Grade</option>
+                <option>8th Grade</option>
+                <option>9th Grade</option>
                 <option>10th Grade</option>
                 <option>11th Grade</option>
                 <option>12th Grade</option>
