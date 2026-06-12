@@ -7,6 +7,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { filterDeductionFeedback } from '../lib/feedback';
 import { formatTokenUsage } from '../lib/tokens';
 
 export function Report({ reportId }: { reportId: string }) {
