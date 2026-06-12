@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -13,9 +13,9 @@ export function useCamera() {
         video: {
           facingMode: { ideal: 'environment' },
           width: { ideal: 1280 },
-          height: { ideal: 720 }
+          height: { ideal: 720 },
         },
-        audio: false
+        audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -24,7 +24,9 @@ export function useCamera() {
       }
       setReady(true);
     } catch {
-      setError('Camera access denied or unavailable. Use the file picker instead.');
+      setError(
+        'Camera access denied or unavailable. Use attach photos instead.',
+      );
       setReady(false);
     }
   }, []);
@@ -58,10 +60,5 @@ export function useCamera() {
     return new Blob([buffer], { type: 'image/jpeg' });
   }, []);
 
-  useEffect(() => {
-    start();
-    return () => stop();
-  }, [start, stop]);
-
-  return { videoRef, ready, error, captureFrame, restart: start };
+  return { videoRef, ready, error, captureFrame, start, stop };
 }

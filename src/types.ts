@@ -10,6 +10,8 @@ export interface Exam {
 export interface FeedbackItem {
   question: string;
   points: string;
+  studentAnswer?: string;
+  correctAnswer?: string;
   content: string;
   deduction: string;
   reasoning: string;

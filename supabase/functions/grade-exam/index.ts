@@ -10,9 +10,27 @@ const corsHeaders = {
 interface FeedbackItem {
   question: string;
   points: string;
+  studentAnswer?: string;
+  correctAnswer?: string;
   content: string;
   deduction: string;
   reasoning: string;
+}
+
+function hasPointDeduction(item: FeedbackItem): boolean {
+  const match = item.points.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+  if (match) {
+    const earned = parseFloat(match[1]);
+    const total = parseFloat(match[2]);
+    if (earned < total) return true;
+  }
+  const d = item.deduction?.trim().toLowerCase();
+  if (!d) return false;
+  return d !== "none." && d !== "none" && d !== "0" && d !== "n/a" && d !== "-";
+}
+
+function filterDeductionFeedback(items: FeedbackItem[]): FeedbackItem[] {
+  return items.filter(hasPointDeduction);
 }
 
 interface GradeResult {
@@ -110,6 +128,19 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (!exam.answer_key?.trim()) {
+      return new Response(
+        JSON.stringify({
+          error: "Exam has no answer key",
+          detail: "Edit the exam master and add an official answer key before grading.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const imageParts: { inline_data: { mime_type: string; data: string } }[] =
       [];
     for (const path of storagePaths) {
@@ -158,35 +189,56 @@ Deno.serve(async (req: Request) => {
       return "gemini-2.5-flash";
     })();
 
-    const systemPrompt = `You are an expert teacher grading student exams from photos of handwritten work.
-Analyze the exam page images carefully. Handwriting may be unclear — interpret it as best you can and note uncertainty in reasoning when needed.
-Grade against the provided answer key and rubric. Apply partial credit fairly.
+    const systemPrompt = `You are an exam grader. The OFFICIAL ANSWER KEY is the sole source of truth for what is correct.
+The rubric is secondary — use it ONLY for partial credit rules, grammar deductions, or formatting penalties AFTER comparing to the answer key.
+Never mark an answer correct if it contradicts the answer key. Never ignore the answer key in favor of the rubric.
+
+GRADING STEPS (follow for every question on the student's pages):
+1. Identify the question number/label on the student's paper.
+2. Find the matching entry in the OFFICIAL ANSWER KEY below.
+3. Read the student's handwritten answer from the image (note uncertainty if illegible).
+4. Compare student answer vs answer key: CORRECT, PARTIALLY CORRECT, or INCORRECT.
+5. Award points based on answer key match and point values in the key.
+6. Apply rubric deductions only where the rubric explicitly applies (e.g. grammar on otherwise-correct content).
+
+If a question on the paper has no matching answer key entry, state that in reasoning and grade from visible content only.
+
+Calculate score as: (total points earned / total points possible) × 100.
+
+FEEDBACK OUTPUT (save teacher time):
+- Include ONLY questions where the student lost points (partial or full loss).
+- Omit fully correct questions entirely.
+- Keep each item short and scannable — no long paragraphs.
 
 Respond ONLY with valid JSON:
 {
-  "studentName": "string (from paper if visible, else 'Unknown Student')",
+  "studentName": "string",
   "score": number,
   "feedback": [
     {
-      "question": "Question label and point total",
+      "question": "Q3 (5 pts)",
+      "studentAnswer": "short reading from image",
+      "correctAnswer": "short expected answer from key",
       "points": "earned / total",
-      "content": "content assessment",
-      "deduction": "deduction or 'None.'",
-      "reasoning": "detailed explanation"
+      "content": "One sentence: what was wrong vs the answer key (max ~15 words)",
+      "deduction": "-N pts",
+      "reasoning": ""
     }
   ]
 }`;
 
-    const userPrompt = `Exam: ${exam.name}
+    const userPrompt = `=== OFFICIAL ANSWER KEY (PRIMARY — grade against this) ===
+${exam.answer_key}
+
+=== GRADING RUBRIC (SECONDARY — partial credit & deductions only) ===
+${exam.rubric || "Standard partial credit. Deduct only for clear errors vs answer key."}
+
+=== EXAM INFO ===
+Name: ${exam.name}
 Grade Level: ${exam.grade_level}
+Pages to grade: ${storagePaths.length}
 
-Answer Key:
-${exam.answer_key || "No answer key — grade from visible questions."}
-
-Rubric:
-${exam.rubric || "Standard partial credit and grammar deductions."}
-
-Grade the ${storagePaths.length} attached page(s).`;
+Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.`;
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -205,7 +257,7 @@ Grade the ${storagePaths.length} attached page(s).`;
             },
           ],
           generationConfig: {
-            temperature: 0.2,
+            temperature: 0.1,
             responseMimeType: "application/json",
             maxOutputTokens: 8192,
           },
@@ -258,6 +310,8 @@ Grade the ${storagePaths.length} attached page(s).`;
         },
       );
     }
+
+    gradeResult.feedback = filterDeductionFeedback(gradeResult.feedback || []);
 
     const { data: report, error: reportError } = await supabase
       .from("reports")
