@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { Exam, StudentReport, ViewState } from './types';
 import { useScreenInit } from './useScreenInit.js';
-import { createExam, fetchExams, fetchReports } from './lib/exams';
+import { createExam, fetchExams, fetchReports, updateExam as updateExamApi } from './lib/exams';
 
 interface AppContextType {
   view: ViewState;
@@ -17,6 +17,7 @@ interface AppContextType {
   reports: StudentReport[];
   loading: boolean;
   addExam: (exam: Omit<Exam, 'id' | 'createdAt'>) => Promise<string>;
+  updateExam: (id: string, exam: Omit<Exam, 'id' | 'createdAt'>) => Promise<void>;
   addReport: (report: StudentReport) => void;
   refreshData: () => Promise<void>;
 }
@@ -53,6 +54,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return exam.id;
   };
 
+  const updateExam = async (
+    id: string,
+    examData: Omit<Exam, 'id' | 'createdAt'>
+  ) => {
+    const exam = await updateExamApi(id, examData);
+    setExams((prev) => prev.map((e) => (e.id === id ? exam : e)));
+  };
+
   const addReport = (report: StudentReport) => {
     setReports((prev) => [report, ...prev]);
   };
@@ -66,6 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         reports,
         loading,
         addExam,
+        updateExam,
         addReport,
         refreshData
       }}>

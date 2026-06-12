@@ -25,6 +25,8 @@ function AppContent() {
         return <Dashboard />;
       case 'create_exam':
         return <CreateExam />;
+      case 'edit_exam':
+        return <CreateExam examId={view.examId} />;
       case 'exam_detail':
         return <ExamDetail examId={view.examId} />;
       case 'capture':

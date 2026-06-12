@@ -86,3 +86,26 @@ export async function createExam(
   if (error) throw error;
   return mapExam(data as ExamRow);
 }
+
+export async function updateExam(
+  id: string,
+  exam: Omit<Exam, 'id' | 'createdAt'>
+): Promise<Exam> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('You must be signed in.');
+
+  const { data, error } = await supabase
+    .from('exams')
+    .update({
+      name: exam.name,
+      grade_level: exam.gradeLevel,
+      answer_key: exam.answerKey,
+      rubric: exam.rubric
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return mapExam(data as ExamRow);
+}

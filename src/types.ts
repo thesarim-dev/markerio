@@ -37,6 +37,7 @@ export interface StudentReport {
 export type ViewState =
 {name: 'dashboard';} |
 {name: 'create_exam';} |
+{name: 'edit_exam';examId: string;} |
 {name: 'exam_detail';examId: string;} |
 {name: 'capture';examId?: string;} |
 {name: 'report';reportId: string;} |
