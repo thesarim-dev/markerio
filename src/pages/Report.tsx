@@ -63,6 +63,31 @@ export function Report({ reportId }: { reportId: string }) {
           </div>
         </div>
 
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() =>
+              setView({
+                name: 'capture',
+                examId: report.examId,
+              })
+            }
+            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-3.5 font-semibold transition-colors flex items-center justify-center gap-2">
+            <RefreshCw className="w-5 h-5" />
+            Re-shoot
+          </button>
+          <button
+            onClick={() =>
+              setView({
+                name: 'capture',
+                examId: report.examId,
+              })
+            }
+            className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3.5 font-semibold shadow-md transition-colors flex items-center justify-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Next Student
+          </button>
+        </div>
+
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h2 className="font-semibold text-slate-900">Deductions</h2>
@@ -130,31 +155,6 @@ export function Report({ reportId }: { reportId: string }) {
           )}
         </div>
       </main>
-
-      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 z-20 flex gap-3">
-        <button
-          onClick={() =>
-            setView({
-              name: 'capture',
-              examId: report.examId,
-            })
-          }
-          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-3.5 font-semibold transition-colors flex items-center justify-center gap-2">
-          <RefreshCw className="w-5 h-5" />
-          Re-shoot
-        </button>
-        <button
-          onClick={() =>
-            setView({
-              name: 'capture',
-              examId: report.examId,
-            })
-          }
-          className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3.5 font-semibold shadow-md transition-colors flex items-center justify-center gap-2">
-          <UserPlus className="w-5 h-5" />
-          Next Student
-        </button>
-      </div>
     </div>
   );
 }

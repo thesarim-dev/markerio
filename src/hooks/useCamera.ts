@@ -1,10 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 
+export type CameraFacing = 'environment' | 'user';
+
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const facingRef = useRef<CameraFacing>('environment');
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [facing, setFacing] = useState<CameraFacing>('environment');
 
   const attachStream = useCallback(async (stream: MediaStream) => {
     const video = videoRef.current;
@@ -22,42 +26,47 @@ export function useCamera() {
     }
   }, []);
 
-  const start = useCallback(async () => {
-    setError(null);
-    setReady(false);
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError(
-        'Camera requires HTTPS or localhost. Use attach photos instead.',
-      );
-      return;
-    }
-
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-      streamRef.current = stream;
-      await attachStream(stream);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Camera access denied';
-      setError(
-        message.includes('Permission')
-          ? 'Camera permission denied. Allow camera access in browser settings.'
-          : 'Camera unavailable. Use attach photos instead.',
-      );
+  const start = useCallback(
+    async (facingMode: CameraFacing = facingRef.current) => {
+      setError(null);
       setReady(false);
-    }
-  }, [attachStream]);
+      facingRef.current = facingMode;
+      setFacing(facingMode);
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError(
+          'Camera requires HTTPS or localhost. Use attach photos instead.',
+        );
+        return;
+      }
+
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+        streamRef.current = stream;
+        await attachStream(stream);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Camera access denied';
+        setError(
+          message.includes('Permission')
+            ? 'Camera permission denied. Allow camera access in browser settings.'
+            : 'Camera unavailable. Use attach photos instead.',
+        );
+        setReady(false);
+      }
+    },
+    [attachStream],
+  );
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -66,7 +75,15 @@ export function useCamera() {
       videoRef.current.srcObject = null;
     }
     setReady(false);
+    facingRef.current = 'environment';
+    setFacing('environment');
   }, []);
+
+  const flip = useCallback(async () => {
+    const next: CameraFacing =
+      facingRef.current === 'environment' ? 'user' : 'environment';
+    await start(next);
+  }, [start]);
 
   const setVideoRef = useCallback(
     (node: HTMLVideoElement | null) => {
@@ -98,5 +115,14 @@ export function useCamera() {
     return new Blob([buffer], { type: 'image/jpeg' });
   }, []);
 
-  return { videoRef: setVideoRef, ready, error, captureFrame, start, stop };
+  return {
+    videoRef: setVideoRef,
+    ready,
+    error,
+    facing,
+    captureFrame,
+    start,
+    stop,
+    flip,
+  };
 }

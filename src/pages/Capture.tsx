@@ -6,6 +6,7 @@ import {
   Loader2,
   ImagePlus,
   ArrowLeft,
+  SwitchCamera,
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useCamera } from '../hooks/useCamera';
@@ -23,6 +24,7 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
     captureFrame,
     start: startCamera,
     stop: stopCamera,
+    flip: flipCamera,
   } = useCamera();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pagesRef = useRef<CapturedPage[]>([]);
@@ -388,7 +390,13 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
           </button>
         )}
         {examSelector}
-        <div className="w-10" />
+        <button
+          onClick={() => void flipCamera()}
+          disabled={!ready || isProcessing}
+          aria-label="Switch camera"
+          className="p-2 text-white/80 hover:text-white bg-black/20 rounded-full backdrop-blur-sm disabled:opacity-40">
+          <SwitchCamera className="w-6 h-6" />
+        </button>
       </div>
 
       <div className="flex-1 relative flex items-center justify-center overflow-hidden">
