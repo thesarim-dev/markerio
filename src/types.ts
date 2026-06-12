@@ -17,6 +17,12 @@ export interface FeedbackItem {
   reasoning: string;
 }
 
+export interface TokenUsage {
+  prompt: number;
+  output: number;
+  total: number;
+}
+
 export interface StudentReport {
   id: string;
   examId: string;
@@ -24,6 +30,7 @@ export interface StudentReport {
   score: number;
   pageCount: number;
   feedback: FeedbackItem[];
+  tokenUsage?: TokenUsage | null;
   createdAt: number;
 }
 

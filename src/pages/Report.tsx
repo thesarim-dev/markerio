@@ -7,7 +7,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
-import { filterDeductionFeedback } from '../lib/feedback';
+import { formatTokenUsage } from '../lib/tokens';
 
 export function Report({ reportId }: { reportId: string }) {
   const { reports, exams, setView } = useAppContext();
@@ -44,8 +44,15 @@ export function Report({ reportId }: { reportId: string }) {
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
           <div className="relative z-10 flex items-center justify-between">
             <div>
-              <p className="text-slate-400 font-medium mb-1">Final Score</p>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-slate-400 font-medium">Final Score</p>
+                {report.tokenUsage && (
+                  <span className="text-slate-500 text-xs">
+                    {formatTokenUsage(report.tokenUsage)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-5xl font-bold tracking-tight">
                   {report.score}
                 </span>

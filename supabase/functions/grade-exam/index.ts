@@ -39,6 +39,22 @@ interface GradeResult {
   feedback: FeedbackItem[];
 }
 
+interface TokenUsage {
+  prompt: number;
+  output: number;
+  total: number;
+}
+
+function parseGeminiUsage(metadata: unknown): TokenUsage | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const m = metadata as Record<string, number | undefined>;
+  const prompt = m.promptTokenCount ?? 0;
+  const output = m.candidatesTokenCount ?? 0;
+  const total = m.totalTokenCount ?? prompt + output;
+  if (total <= 0 && prompt <= 0 && output <= 0) return null;
+  return { prompt, output, total: total > 0 ? total : prompt + output };
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -312,6 +328,7 @@ Grade every question visible on the attached exam page images. Compare each stud
     }
 
     gradeResult.feedback = filterDeductionFeedback(gradeResult.feedback || []);
+    const tokenUsage = parseGeminiUsage(geminiData.usageMetadata);
 
     const { data: report, error: reportError } = await supabase
       .from("reports")
@@ -322,6 +339,7 @@ Grade every question visible on the attached exam page images. Compare each stud
         score: gradeResult.score,
         page_count: storagePaths.length,
         feedback: gradeResult.feedback || [],
+        token_usage: tokenUsage,
       })
       .select()
       .single();
@@ -353,6 +371,7 @@ Grade every question visible on the attached exam page images. Compare each stud
           score: Number(report.score),
           pageCount: report.page_count,
           feedback: report.feedback,
+          tokenUsage: report.token_usage ?? tokenUsage,
           createdAt: new Date(report.created_at).getTime(),
         },
         usage: geminiData.usageMetadata ?? null,

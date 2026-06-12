@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Exam, FeedbackItem, StudentReport } from '../types';
+import { Exam, FeedbackItem, StudentReport, TokenUsage } from '../types';
 
 interface ExamRow {
   id: string;
@@ -17,6 +17,7 @@ interface ReportRow {
   score: number;
   page_count: number;
   feedback: FeedbackItem[];
+  token_usage: TokenUsage | null;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export function mapReport(row: ReportRow): StudentReport {
     score: Number(row.score),
     pageCount: row.page_count,
     feedback: row.feedback ?? [],
+    tokenUsage: row.token_usage ?? null,
     createdAt: new Date(row.created_at).getTime()
   };
 }
