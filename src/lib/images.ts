@@ -1,7 +1,7 @@
 export async function compressImage(
   blob: Blob,
-  maxWidth = 1280,
-  quality = 0.75
+  maxWidth = 1024,
+  quality = 0.7
 ): Promise<Blob> {
   if (typeof createImageBitmap !== 'function') return blob;
 
@@ -34,10 +34,22 @@ export function formatGradingError(payload: {
   detail?: string;
 }): string {
   const base = payload.error || 'Grading failed';
-  if (!payload.detail) return base;
   const detail =
     typeof payload.detail === 'string'
       ? payload.detail
-      : JSON.stringify(payload.detail);
+      : payload.detail
+        ? JSON.stringify(payload.detail)
+        : '';
+
+  if (/quota|rate.limit|billing|exceeded your current quota/i.test(detail)) {
+    return (
+      'Gemini API quota exceeded. In Supabase secrets, remove GEMINI_MODEL or set it to gemini-2.5-flash. ' +
+      'Enable billing at aistudio.google.com if needed. Using gemini-1.5-pro often has zero free quota.'
+    );
+  }
+
+  if (!detail) return base;
   return `${base}: ${detail.slice(0, 400)}`;
 }
+
+export const MAX_PAGES_PER_GRADE = 4;

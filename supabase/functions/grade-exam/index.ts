@@ -144,7 +144,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const model = Deno.env.get("GEMINI_MODEL")?.trim() || "gemini-2.5-flash";
+    const model = (() => {
+      const requested = Deno.env.get("GEMINI_MODEL")?.trim();
+      // Pro / 1.5 models often have zero quota on free API keys
+      if (
+        requested &&
+        !requested.includes("1.5-pro") &&
+        !requested.includes("2.5-pro") &&
+        !requested.includes("3.5-pro")
+      ) {
+        return requested;
+      }
+      return "gemini-2.5-flash";
+    })();
 
     const systemPrompt = `You are an expert teacher grading student exams from photos of handwritten work.
 Analyze the exam page images carefully. Handwriting may be unclear — interpret it as best you can and note uncertainty in reasoning when needed.

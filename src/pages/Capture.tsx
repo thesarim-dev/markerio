@@ -3,6 +3,7 @@ import { X, Camera, Check, Loader2, ImagePlus } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { useCamera } from '../hooks/useCamera';
 import { uploadAndGradeExam, CapturedPage } from '../lib/grading';
+import { MAX_PAGES_PER_GRADE } from '../lib/images';
 
 export function Capture({ initialExamId }: { initialExamId?: string }) {
   const { exams, setView, addReport } = useAppContext();
@@ -34,11 +35,15 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
   }, []);
 
   const addPage = useCallback((blob: Blob) => {
-    const previewUrl = URL.createObjectURL(blob);
-    setPages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), blob, previewUrl }
-    ]);
+    setPages((prev) => {
+      if (prev.length >= MAX_PAGES_PER_GRADE) {
+        setError(`Maximum ${MAX_PAGES_PER_GRADE} pages per grade. Process this batch, then grade remaining pages separately.`);
+        return prev;
+      }
+      setError(null);
+      const previewUrl = URL.createObjectURL(blob);
+      return [...prev, { id: crypto.randomUUID(), blob, previewUrl }];
+    });
   }, []);
 
   const handleCapture = () => {
@@ -178,6 +183,11 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
         )}
 
         <div className="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
+          {pages.length > 0 && (
+            <p className="text-white/50 text-xs flex-shrink-0 pr-1">
+              {pages.length}/{MAX_PAGES_PER_GRADE} pages
+            </p>
+          )}
           {pages.map((page, idx) => (
             <div
               key={page.id}
