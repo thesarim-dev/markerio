@@ -37,6 +37,15 @@ function mimeFromPath(path: string): string {
   return "image/jpeg";
 }
 
+function parseGeminiError(body: string): string {
+  try {
+    const json = JSON.parse(body);
+    return json.error?.message || json.message || body;
+  } catch {
+    return body.slice(0, 500);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -124,7 +133,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+    const geminiKey = Deno.env.get("GEMINI_API_KEY")?.trim();
     if (!geminiKey) {
       return new Response(
         JSON.stringify({ error: "GEMINI_API_KEY not configured on server" }),
@@ -135,7 +144,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const model = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.0-flash";
+    const model = Deno.env.get("GEMINI_MODEL")?.trim() || "gemini-2.5-flash";
 
     const systemPrompt = `You are an expert teacher grading student exams from photos of handwritten work.
 Analyze the exam page images carefully. Handwriting may be unclear — interpret it as best you can and note uncertainty in reasoning when needed.
@@ -176,7 +185,7 @@ Grade the ${storagePaths.length} attached page(s).`;
           "x-goog-api-key": geminiKey,
         },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
+          systemInstruction: { parts: [{ text: systemPrompt }] },
           contents: [
             {
               role: "user",
@@ -186,13 +195,15 @@ Grade the ${storagePaths.length} attached page(s).`;
           generationConfig: {
             temperature: 0.2,
             responseMimeType: "application/json",
+            maxOutputTokens: 8192,
           },
         }),
       },
     );
 
     if (!geminiResponse.ok) {
-      const detail = await geminiResponse.text();
+      const detail = parseGeminiError(await geminiResponse.text());
+      console.error("Gemini API error:", detail);
       return new Response(
         JSON.stringify({ error: "AI grading failed", detail }),
         {
@@ -203,17 +214,37 @@ Grade the ${storagePaths.length} attached page(s).`;
     }
 
     const geminiData = await geminiResponse.json();
-    const content =
-      geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const candidate = geminiData.candidates?.[0];
+    const content = candidate?.content?.parts?.[0]?.text ?? "";
+
+    if (!content) {
+      const reason = candidate?.finishReason ?? "unknown";
+      return new Response(
+        JSON.stringify({
+          error: "AI returned no content",
+          detail: `Finish reason: ${reason}`,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     let gradeResult: GradeResult;
     try {
       gradeResult = JSON.parse(content);
     } catch {
-      return new Response(JSON.stringify({ error: "Failed to parse AI response" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Failed to parse AI response",
+          detail: content.slice(0, 200),
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { data: report, error: reportError } = await supabase
@@ -258,11 +289,13 @@ Grade the ${storagePaths.length} attached page(s).`;
           feedback: report.feedback,
           createdAt: new Date(report.created_at).getTime(),
         },
+        usage: geminiData.usageMetadata ?? null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("grade-exam error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

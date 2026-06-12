@@ -1,4 +1,5 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from './supabase';
+import { compressImage, formatGradingError } from './images';
 import { StudentReport } from '../types';
 
 export interface CapturedPage {
@@ -38,9 +39,7 @@ async function invokeGradeExam(
   }
 
   if (!response.ok) {
-    throw new Error(
-      payload.error || payload.detail || `Grading failed (${response.status})`
-    );
+    throw new Error(formatGradingError(payload));
   }
 
   return payload as { report: StudentReport };
@@ -60,9 +59,10 @@ export async function uploadAndGradeExam(
 
   for (let i = 0; i < pages.length; i++) {
     const path = `${user.id}/${sessionId}/page-${i}.jpg`;
+    const compressed = await compressImage(pages[i].blob);
     const { error } = await supabase.storage
       .from('exam-captures')
-      .upload(path, pages[i].blob, { contentType: 'image/jpeg', upsert: false });
+      .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
 
     if (error) {
       if (storagePaths.length > 0) {
