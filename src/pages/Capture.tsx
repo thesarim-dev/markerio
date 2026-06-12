@@ -46,8 +46,12 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
   }, [initialExamId, exams, selectedExamId]);
 
   useEffect(() => {
-    if (mode === 'camera') startCamera();
-    else stopCamera();
+    if (mode !== 'camera') {
+      stopCamera();
+      return;
+    }
+
+    void startCamera();
     return () => stopCamera();
   }, [mode, startCamera, stopCamera]);
 
@@ -388,16 +392,16 @@ export function Capture({ initialExamId }: { initialExamId?: string }) {
       </div>
 
       <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-        {ready ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-3 px-6 text-center">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {!ready && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center bg-black/80">
             <Camera className="w-12 h-12 text-white/30 animate-pulse" />
             <p className="text-white/50 text-sm">
               {cameraError ?? 'Starting camera...'}

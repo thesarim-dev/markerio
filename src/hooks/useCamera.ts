@@ -6,8 +6,36 @@ export function useCamera() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const attachStream = useCallback(async (stream: MediaStream) => {
+    const video = videoRef.current;
+    if (!video) return false;
+
+    video.srcObject = stream;
+    try {
+      await video.play();
+      setReady(true);
+      return true;
+    } catch {
+      setError('Could not start video preview.');
+      setReady(false);
+      return false;
+    }
+  }, []);
+
   const start = useCallback(async () => {
     setError(null);
+    setReady(false);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError(
+        'Camera requires HTTPS or localhost. Use attach photos instead.',
+      );
+      return;
+    }
+
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -18,18 +46,18 @@ export function useCamera() {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setReady(true);
-    } catch {
+      await attachStream(stream);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Camera access denied';
       setError(
-        'Camera access denied or unavailable. Use attach photos instead.',
+        message.includes('Permission')
+          ? 'Camera permission denied. Allow camera access in browser settings.'
+          : 'Camera unavailable. Use attach photos instead.',
       );
       setReady(false);
     }
-  }, []);
+  }, [attachStream]);
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -39,6 +67,16 @@ export function useCamera() {
     }
     setReady(false);
   }, []);
+
+  const setVideoRef = useCallback(
+    (node: HTMLVideoElement | null) => {
+      videoRef.current = node;
+      if (node && streamRef.current && node.srcObject !== streamRef.current) {
+        void attachStream(streamRef.current);
+      }
+    },
+    [attachStream],
+  );
 
   const captureFrame = useCallback((): Blob | null => {
     const video = videoRef.current;
@@ -60,5 +98,5 @@ export function useCamera() {
     return new Blob([buffer], { type: 'image/jpeg' });
   }, []);
 
-  return { videoRef, ready, error, captureFrame, start, stop };
+  return { videoRef: setVideoRef, ready, error, captureFrame, start, stop };
 }
