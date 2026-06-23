@@ -1,10 +1,12 @@
 import { supabase } from './supabase';
-import { Exam, FeedbackItem, StudentReport, TokenUsage } from '../types';
+import { Exam, FeedbackItem, StudentReport, TokenUsage, GradingType } from '../types';
+import { normalizeGradingType } from './gradingTypes';
 
 interface ExamRow {
   id: string;
   name: string;
   grade_level: string;
+  grading_type: string;
   answer_key: string;
   rubric: string;
   created_at: string;
@@ -25,7 +27,8 @@ export function mapExam(row: ExamRow): Exam {
   return {
     id: row.id,
     name: row.name,
-    gradeLevel: row.grade_level,
+    gradeLevel: row.grade_level ?? '',
+    gradingType: normalizeGradingType(row.grading_type),
     answerKey: row.answer_key,
     rubric: row.rubric,
     createdAt: new Date(row.created_at).getTime()
@@ -77,6 +80,7 @@ export async function createExam(
       user_id: user.id,
       name: exam.name,
       grade_level: exam.gradeLevel,
+      grading_type: exam.gradingType,
       answer_key: exam.answerKey,
       rubric: exam.rubric
     })
@@ -99,6 +103,7 @@ export async function updateExam(
     .update({
       name: exam.name,
       grade_level: exam.gradeLevel,
+      grading_type: exam.gradingType,
       answer_key: exam.answerKey,
       rubric: exam.rubric
     })

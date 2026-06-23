@@ -1,5 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  getGradingTypeInstructions,
+  getGradingTypeLabel,
+} from "./gradingTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -243,18 +247,24 @@ Respond ONLY with valid JSON:
   ]
 }`;
 
+    const gradingInstructions = getGradingTypeInstructions(exam.grading_type);
+    const rubricFallback = gradingInstructions
+      ? "Apply the official grading framework below together with any teacher rubric notes."
+      : "Standard partial credit. Deduct only for clear errors vs answer key.";
+
     const userPrompt = `=== OFFICIAL ANSWER KEY (PRIMARY — grade against this) ===
 ${exam.answer_key}
 
-=== GRADING RUBRIC (SECONDARY — partial credit & deductions only) ===
-${exam.rubric || "Standard partial credit. Deduct only for clear errors vs answer key."}
+${gradingInstructions ? `=== GRADING FRAMEWORK (${getGradingTypeLabel(exam.grading_type)}) ===\n${gradingInstructions}\n\n` : ""}=== GRADING RUBRIC (SECONDARY — teacher notes & partial credit) ===
+${exam.rubric || rubricFallback}
 
 === EXAM INFO ===
 Name: ${exam.name}
-${exam.grade_level?.trim() ? `Grade Level: ${exam.grade_level.trim()}` : ''}
+${exam.grade_level?.trim() ? `Grade Level: ${exam.grade_level.trim()}` : ""}
+Grading Type: ${getGradingTypeLabel(exam.grading_type)}
 Pages to grade: ${storagePaths.length}
 
-Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.`;
+Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.${gradingInstructions ? " Apply the grading framework for partial credit and language deductions where relevant." : ""}`;
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,

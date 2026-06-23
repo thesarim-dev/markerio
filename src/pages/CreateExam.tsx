@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { parseAnswerKeyFile } from '../lib/answerKeyFile';
+import {
+  DEFAULT_GRADING_TYPE,
+  GRADING_TYPE_OPTIONS,
+} from '../lib/gradingTypes';
+import type { GradingType } from '../types';
 
 export function CreateExam({ examId }: { examId?: string }) {
   const { exams, setView, addExam, updateExam } = useAppContext();
@@ -16,6 +21,7 @@ export function CreateExam({ examId }: { examId?: string }) {
 
   const [name, setName] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
+  const [gradingType, setGradingType] = useState<GradingType>(DEFAULT_GRADING_TYPE);
   const [answerKey, setAnswerKey] = useState('');
   const [rubric, setRubric] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -36,6 +42,7 @@ export function CreateExam({ examId }: { examId?: string }) {
     if (!isEditing || !existingExam) return;
     setName(existingExam.name);
     setGradeLevel(existingExam.gradeLevel);
+    setGradingType(existingExam.gradingType);
     setAnswerKey(existingExam.answerKey);
     setRubric(existingExam.rubric);
     setLoaded(true);
@@ -87,6 +94,7 @@ export function CreateExam({ examId }: { examId?: string }) {
       const payload = {
         name: name.trim(),
         gradeLevel: gradeLevel.trim(),
+        gradingType,
         answerKey: resolvedKey,
         rubric: rubric.trim(),
       };
@@ -172,6 +180,30 @@ export function CreateExam({ examId }: { examId?: string }) {
                 <option>11th Grade</option>
                 <option>12th Grade</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Grading type
+              </label>
+              <select
+                value={gradingType}
+                onChange={(e) =>
+                  setGradingType(e.target.value as GradingType)
+                }
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-slate-900 appearance-none">
+                {GRADING_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                {
+                  GRADING_TYPE_OPTIONS.find((o) => o.value === gradingType)
+                    ?.description
+                }
+              </p>
             </div>
           </div>
 

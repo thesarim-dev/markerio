@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Camera, Users, FileText, ChevronRight, Pencil } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { getGradingTypeLabel } from '../lib/gradingTypes';
 export function ExamDetail({ examId }: {examId: string;}) {
   const { exams, reports, setView } = useAppContext();
   const exam = exams.find((e) => e.id === examId);
@@ -40,10 +41,15 @@ export function ExamDetail({ examId }: {examId: string;}) {
             Edit
           </button>
         </div>
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
           {exam.gradeLevel && (
             <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 text-sm font-medium">
               {exam.gradeLevel}
+            </span>
+          )}
+          {exam.gradingType !== 'standard' && (
+            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 px-2.5 py-1 rounded-md text-xs font-medium">
+              {getGradingTypeLabel(exam.gradingType)}
             </span>
           )}
           <span className="flex items-center gap-1.5 text-sm text-slate-500">

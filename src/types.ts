@@ -1,7 +1,15 @@
+export type GradingType =
+  | 'standard'
+  | 'moe_english_reading'
+  | 'moe_english_writing'
+  | 'moe_english_vocabulary'
+  | 'moe_english_mixed';
+
 export interface Exam {
   id: string;
   name: string;
   gradeLevel: string;
+  gradingType: GradingType;
   answerKey: string;
   rubric: string;
   createdAt: number;
