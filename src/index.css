@@ -10,12 +10,28 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #f8fafc; /* slate-50 */
+  background-color: #f1f5f9; /* slate-100 */
   color: #0f172a; /* slate-900 */
   -webkit-font-smoothing: antialiased;
 }
-/* Hide scrollbar for clean mobile look */
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
+
+/* Hide scrollbar on mobile; show subtle scrollbar on desktop */
+@media (max-width: 1023px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}
+
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }

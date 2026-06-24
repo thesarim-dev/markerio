@@ -13,6 +13,7 @@ import {
   GRADING_TYPE_OPTIONS,
 } from '../lib/gradingTypes';
 import type { GradingType } from '../types';
+import { Page, PageHeader, PageMain, PageFooter } from '../components/AppShell';
 
 export function CreateExam({ examId }: { examId?: string }) {
   const { exams, setView, addExam, updateExam } = useAppContext();
@@ -135,20 +136,20 @@ export function CreateExam({ examId }: { examId?: string }) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 pb-24">
-      <header className="bg-white px-4 pt-12 pb-4 border-b border-slate-200 sticky top-0 z-10 flex items-center gap-3">
+    <Page>
+      <PageHeader className="flex items-center gap-3">
         <button
           onClick={handleBack}
           className="p-2 -ml-2 text-slate-500 hover:text-slate-900 transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-xl font-bold text-slate-900">
+        <h1 className="text-xl lg:text-2xl font-bold text-slate-900">
           {isEditing ? 'Edit Exam Master' : 'Create New Exam Master'}
         </h1>
-      </header>
+      </PageHeader>
 
-      <main className="flex-1 p-6 overflow-y-auto">
-        <div className="space-y-6 max-w-md mx-auto">
+      <PageMain className="pb-32 lg:pb-8">
+        <div className="space-y-6 max-w-2xl mx-auto">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -352,23 +353,23 @@ export function CreateExam({ examId }: { examId?: string }) {
             />
           </div>
         </div>
-      </main>
+      </PageMain>
 
-      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white border-t border-slate-200 z-20">
+      <PageFooter>
         {error && (
           <p className="text-sm text-red-600 mb-3 text-center">{error}</p>
         )}
         <button
           onClick={handleSave}
           disabled={!name.trim() || !hasAnswerKey || saving || parsingFile}
-          className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl py-4 font-semibold shadow-md transition-colors text-lg">
+          className="w-full lg:max-w-md lg:mx-auto bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl py-4 font-semibold shadow-md transition-colors text-lg">
           {saving
             ? 'Saving...'
             : isEditing
               ? 'Save Changes'
               : 'Save Exam Master'}
         </button>
-      </div>
-    </div>
+      </PageFooter>
+    </Page>
   );
 }

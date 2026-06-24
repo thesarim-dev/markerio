@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppProvider, useAppContext } from './AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { BottomNav } from './components/BottomNav';
+import { AppShell } from './components/AppShell';
 import { Auth } from './pages/Auth';
 import { Dashboard } from './pages/Dashboard';
 import { CreateExam } from './pages/CreateExam';
@@ -10,15 +10,18 @@ import { Capture } from './pages/Capture';
 import { Report } from './pages/Report';
 import { ReportsList } from './pages/ReportsList';
 import { Loader2 } from 'lucide-react';
+
 function AppContent() {
   const { view, loading } = useAppContext();
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full bg-white lg:bg-slate-50">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
+
   const renderView = () => {
     switch (view.name) {
       case 'dashboard':
@@ -39,23 +42,18 @@ function AppContent() {
         return <Dashboard />;
     }
   };
-  // Hide bottom nav on capture screen for full immersion
-  const showBottomNav = view.name !== 'capture';
-  return (
-    <div className="w-full h-screen max-w-md mx-auto bg-white relative overflow-hidden shadow-2xl sm:rounded-[2.5rem] sm:h-[850px] sm:my-8 sm:border-8 border-slate-900">
-      {renderView()}
-      {showBottomNav && <BottomNav />}
-    </div>);
 
+  const showNav = view.name !== 'capture';
+
+  return <AppShell showNav={showNav}>{renderView()}</AppShell>;
 }
-export function App() {
-  return (
-    <AuthProvider>
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-8">
-        <AppGate />
-      </div>
-    </AuthProvider>);
 
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-full max-w-md lg:max-w-lg bg-white lg:rounded-2xl lg:shadow-xl lg:border lg:border-slate-200 overflow-hidden min-h-[100dvh] lg:min-h-0 lg:my-8">
+      {children}
+    </div>
+  );
 }
 
 function AppGate() {
@@ -63,23 +61,37 @@ function AppGate() {
 
   if (loading) {
     return (
-      <div className="w-full h-screen max-w-md mx-auto bg-white flex items-center justify-center shadow-2xl sm:rounded-[2.5rem] sm:h-[850px] sm:my-8 sm:border-8 border-slate-900">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-      </div>);
-
+      <div className="min-h-[100dvh] flex items-center justify-center p-4 lg:p-8">
+        <AuthCard>
+          <div className="flex items-center justify-center h-[60vh] lg:h-96">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          </div>
+        </AuthCard>
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div className="w-full h-screen max-w-md mx-auto bg-white relative overflow-hidden shadow-2xl sm:rounded-[2.5rem] sm:h-[850px] sm:my-8 sm:border-8 border-slate-900">
-        <Auth />
-      </div>);
-
+      <div className="min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
+        <AuthCard>
+          <Auth />
+        </AuthCard>
+      </div>
+    );
   }
 
   return (
     <AppProvider>
       <AppContent />
-    </AppProvider>);
+    </AppProvider>
+  );
+}
 
+export function App() {
+  return (
+    <AuthProvider>
+      <AppGate />
+    </AuthProvider>
+  );
 }
