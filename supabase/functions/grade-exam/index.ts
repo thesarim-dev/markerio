@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  getGradingTypeInstructions,
   getGradingTypeLabel,
+  getGradingTypeSystemPrompt,
 } from "./gradingTypes.ts";
 
 const corsHeaders = {
@@ -209,7 +209,7 @@ Deno.serve(async (req: Request) => {
       return "gemini-2.5-flash";
     })();
 
-    const systemPrompt = `You are an exam grader. The OFFICIAL ANSWER KEY is the sole source of truth for what is correct.
+    const standardSystemPrompt = `You are an exam grader. The OFFICIAL ANSWER KEY is the sole source of truth for what is correct.
 The rubric is secondary — use it ONLY for partial credit rules, grammar deductions, or formatting penalties AFTER comparing to the answer key.
 Never mark an answer correct if it contradicts the answer key. Never ignore the answer key in favor of the rubric.
 
@@ -247,16 +247,14 @@ Respond ONLY with valid JSON:
   ]
 }`;
 
-    const gradingInstructions = getGradingTypeInstructions(exam.grading_type);
-    const rubricFallback = gradingInstructions
-      ? "Apply the official grading framework below together with any teacher rubric notes."
-      : "Standard partial credit. Deduct only for clear errors vs answer key.";
+    const moeSystemPrompt = getGradingTypeSystemPrompt(exam.grading_type);
+    const systemPrompt = moeSystemPrompt ?? standardSystemPrompt;
 
-    const userPrompt = `=== OFFICIAL ANSWER KEY (PRIMARY — grade against this) ===
+    const userPrompt = `=== OFFICIAL ANSWER KEY (Machvon — PRIMARY) ===
 ${exam.answer_key}
 
-${gradingInstructions ? `=== GRADING FRAMEWORK (${getGradingTypeLabel(exam.grading_type)}) ===\n${gradingInstructions}\n\n` : ""}=== GRADING RUBRIC (SECONDARY — teacher notes & partial credit) ===
-${exam.rubric || rubricFallback}
+=== TEACHER RUBRIC NOTES (SECONDARY) ===
+${exam.rubric || "No additional teacher notes."}
 
 === EXAM INFO ===
 Name: ${exam.name}
@@ -264,7 +262,7 @@ ${exam.grade_level?.trim() ? `Grade Level: ${exam.grade_level.trim()}` : ""}
 Grading Type: ${getGradingTypeLabel(exam.grading_type)}
 Pages to grade: ${storagePaths.length}
 
-Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.${gradingInstructions ? " Apply the grading framework for partial credit and language deductions where relevant." : ""}`;
+Grade every question visible on the attached exam page images. Compare each student answer to the answer key above.`;
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,

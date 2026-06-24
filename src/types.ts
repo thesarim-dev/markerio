@@ -1,9 +1,8 @@
 export type GradingType =
   | 'standard'
-  | 'moe_english_reading'
-  | 'moe_english_writing'
-  | 'moe_english_vocabulary'
-  | 'moe_english_mixed';
+  | 'moe_english_module_c'
+  | 'moe_english_module_e'
+  | 'moe_english_module_g';
 
 export interface Exam {
   id: string;
